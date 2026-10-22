@@ -1,0 +1,49 @@
+name: Build Free My TV APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: sdkmanager "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Configure Zagreb
+        run: |
+          cp config.example.properties config.properties
+          sed -i 's/^city=.*/city=Zagreb/' config.properties
+          sed -i 's/^latitude=.*/latitude=45.8150/' config.properties
+          sed -i 's/^longitude=.*/longitude=15.9819/' config.properties
+          sed -i 's/^tmdb_region=.*/tmdb_region=HR/' config.properties
+          sed -i 's/^currency=.*/currency=EUR/' config.properties
+          sed -i 's/^temperature=.*/temperature=C/' config.properties
+
+      - name: Build APK
+        run: |
+          chmod +x build.sh
+          ./build.sh
+          find . -name 'FreeMyTV.apk' -o -name '*.apk'
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: FreeMyTV-APK
+          path: '**/FreeMyTV.apk'
+          if-no-files-found: error
